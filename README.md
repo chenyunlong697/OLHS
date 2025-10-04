@@ -15,6 +15,6 @@ CST文件路径是D:\\parameterization\\airfoil\\CST\\code\\CST.py
 python olhs_airfoil_generator.py
 ```
 
-可以通过 `--out-dir` 指定输出目录，通过 `--n-samples` 调整样本数量（默认 400 个）。
+可以通过 `--out-dir` 指定输出目录，通过 `--n-samples` 调整样本数量（默认 400 个）。如果运行环境没有安装 `matplotlib`，脚本会自动跳过绘图步骤，其余表格和点数据仍会正常导出。
 
 新版求解器在迭代过程中强制翼型厚度为正，从而确保上下表面不会交叉。绘图阶段会从样本中均匀挑选最多 40 个翼型，用彩色带标记的折线展示效果，便于快速检查生成的曲线形态。

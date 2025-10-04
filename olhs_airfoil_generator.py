@@ -14,14 +14,20 @@ Use ``--out-dir`` to override when running on another platform.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+_mpl_spec = importlib.util.find_spec("matplotlib.pyplot")
+if _mpl_spec is not None:
+    import matplotlib.pyplot as plt  # type: ignore
+else:
+    plt = None
 
 # CST utilities live in CST.py (referenced in README.md).
 from CST import (
@@ -296,6 +302,10 @@ def export_excel(
 
 
 def plot_airfoils(out_path: Path, x: np.ndarray, surfaces: List[Tuple[np.ndarray, np.ndarray]]) -> None:
+    if plt is None:
+        print("[WARN] matplotlib is not available; skipping overlay plot.")
+        return
+
     out_path.parent.mkdir(parents=True, exist_ok=True)
     plt.figure(figsize=(10, 4.2))
     ax = plt.gca()
