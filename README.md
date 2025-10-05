@@ -10,3 +10,20 @@ OLHS生成的样本数量初步定为200个
 我是一个小白，只生成一个能一键运行的代码就行，文件保存位置是D:\\parameterization\\airfoil\\OLHS
 
 新版求解器在迭代过程中强制翼型厚度为正，从而确保上下表面不会交叉。
+
+## 一键脚本说明
+
+仓库新增了 `generate_olhs_samples.py`，在安装好 `numpy`、`pandas`、`matplotlib` 以及 `openpyxl` 之后，直接运行
+
+```bash
+python generate_olhs_samples.py
+```
+
+脚本会在 `D:\parameterization\airfoil\OLHS`（Windows 环境）下自动生成：
+
+- `airfoil_features.xlsx`：包含 200 个样本的 14 维参数目标值与实际值；
+- `cst_coefficients.xlsx`：对应的 CST 厚度/弯度系数与求解信息；
+- `airfoil_points.xlsx`：按余弦聚点方式排列的 200 个翼型表面点（尾缘上表面出发，经过前缘再回到尾缘下表面）；
+- `representative_airfoils.png`：10 个代表性翼型（上下表面同色、不同翼型异色）汇总图。
+
+在非 Windows 系统测试时，文件会保存到当前工作目录下的同名路径（自动替换反斜杠）。
