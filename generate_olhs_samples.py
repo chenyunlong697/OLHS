@@ -232,6 +232,32 @@ def leading_edge_monotone(thickness: np.ndarray, x: np.ndarray, tol: float = 2.5
     return bool(np.all(diffs >= -tol))
 
 
+def leading_edge_camber_rises(camber: np.ndarray, x: np.ndarray, tol: float = 3.0e-4) -> bool:
+    """Ensure the camber line does not dip below the leading-edge height."""
+
+    idx = int(np.searchsorted(x, 0.08))
+    if idx <= 2:
+        return True
+    baseline = camber[0]
+    window = camber[: idx + 1] - baseline
+    return bool(np.all(window >= -tol))
+
+
+def leading_edge_thickness_sufficient(
+    thickness: np.ndarray,
+    x: np.ndarray,
+    min_abs: float = 0.012,
+    min_ratio: float = 0.42,
+) -> bool:
+    """Guarantee a stout, convex nose by enforcing early-chord thickness."""
+
+    t_015 = float(np.interp(0.15, x, thickness))
+    target = max(min_abs, min_ratio * t_015)
+    t_020 = float(np.interp(0.02, x, thickness))
+    t_040 = float(np.interp(0.04, x, thickness))
+    return bool(t_020 >= 0.65 * target and t_040 >= target)
+
+
 def evaluate_theta(theta: Sequence[float]) -> Tuple[np.ndarray, Dict[str, np.ndarray]]:
     """Return the feature vector and auxiliary fields for a given theta."""
 
@@ -246,6 +272,8 @@ def evaluate_theta(theta: Sequence[float]) -> Tuple[np.ndarray, Dict[str, np.nda
     aux["yu"] = z + 0.5 * t
     aux["yl"] = z - 0.5 * t
     aux["leading_edge_ok"] = leading_edge_monotone(t, X_DENSE)
+    aux["leading_edge_camber_ok"] = leading_edge_camber_rises(z, X_DENSE)
+    aux["leading_edge_thickness_ok"] = leading_edge_thickness_sufficient(t, X_DENSE)
     return vec, aux
 
 
@@ -328,6 +356,10 @@ def solve_for_theta(
             if np.min(aux_trial["t"]) <= 5e-4:
                 continue
             if not aux_trial.get("leading_edge_ok", True):
+                continue
+            if not aux_trial.get("leading_edge_camber_ok", True):
+                continue
+            if not aux_trial.get("leading_edge_thickness_ok", True):
                 continue
             if np.linalg.norm(residual_trial) <= norm:
                 theta = theta_trial
@@ -463,6 +495,10 @@ def main() -> None:
 
         if not solve.aux.get("leading_edge_ok", True):
             raise RuntimeError("Leading-edge monotonicity violated after solve")
+        if not solve.aux.get("leading_edge_camber_ok", True):
+            raise RuntimeError("Leading-edge camber dips below nose height")
+        if not solve.aux.get("leading_edge_thickness_ok", True):
+            raise RuntimeError("Leading-edge thickness too small for convex nose")
 
         actual_features = {name: solve.vec[i] for i, name in enumerate(FEATURE_ORDER)}
         row = {"sample_id": idx + 1}
